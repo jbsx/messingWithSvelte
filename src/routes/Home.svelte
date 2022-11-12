@@ -44,8 +44,8 @@
     const generateLobby = async ()=>{
         try {
           const docRef = await addDoc(collection(db, "games"), {
-            player1: user.email? user.email: "John Cena",
-            turn:  user.email? user.email: "John Cena",
+            player1: user.email,
+            turn:  user.email,
             gameboard: {
                 "1": "",
                 "2": "",
@@ -85,7 +85,7 @@
             Logout
         </button>
     {:else}
-        <button on:click={()=>{generateLobby()}}>
+        <button disabled on:click={()=>{generateLobby()}}>
             Play as Guest
         </button>
         <button on:click={()=>{login()}}>

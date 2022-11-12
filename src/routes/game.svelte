@@ -5,7 +5,7 @@
 
     export let params = {};
 
-// Initialize Firebase App
+    //Initialize Firebase App
     const firebaseConfig = {
         apiKey: "AIzaSyA2uCHyHvmfpQX_YPBI1utv_Kkm4rK709g",
         authDomain: "test-85760.firebaseapp.com",
@@ -15,9 +15,47 @@
         appId: "1:768617131325:web:4fbdbf9fb31aa2efa66954",
         measurementId: "G-PBGF5YRB26"
     };
+
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    $: gamedata = {
+
+    //LOGIN
+    const auth = getAuth();
+
+    let user = {};
+    let logged = false;
+
+    const login = async ()=>{
+
+        const provider = new GoogleAuthProvider();
+        await signInWithPopup(auth, provider);
+
+    }
+
+    //Update state on login and logout
+    auth.onAuthStateChanged(async curr => {
+        if (curr){
+
+            logged = true;
+            user = curr;
+
+            if (!gamedata["player2"] && gamedata["player1"]){
+                gamedata["player2"] = curr.email;
+                await setDoc(doc(db, "games", params["id"]), gamedata);
+            }
+
+        } else {
+            logged = false;
+        }
+    })
+
+    const addPlayer2 = async ()=>{
+        gamedata["player2"] = user["email"];
+        await setDoc(doc(db, "games", params["id"]), gamedata);
+    }
+
+
+    let gamedata = {
         player1: user["email"],
         turn: user["email"],
         gameboard: {
@@ -33,44 +71,15 @@
         },
     }
     
-//LOGIN
-    const auth = getAuth();
-
-    $: user = {};
-    $: logged = false;
-
-    const login = async ()=>{
-        const provider = new GoogleAuthProvider();
-        await signInWithPopup(auth, provider);
-    }
-
-// Update state on login and logout
-    auth.onAuthStateChanged(async curr => {
-        if (curr){
-            logged = true;
-            user = curr;
-            if (!gamedata["player2"] && gamedata["player1"]){
-                gamedata["player2"] = curr.email;
-                await setDoc(doc(db, "games", params["id"]), gamedata);
-            }
-        } else {
-            logged = false;
-        }
-    })
-
-    const addPlayer2 = async ()=>{
-        gamedata["player2"] = user["email"];
-        await setDoc(doc(db, "games", params["id"]), gamedata);
-    }
-
-//GAME LOGIC
+    //GAME LOGIC
     onSnapshot(doc(db, "games", params["id"]), (doc) => {
         //@ts-ignore
         gamedata = doc.data();
     });
 
-//Play turn
+    //Play turn
     const update = async (position: number) =>{
+
         if (gamedata["turn"] === user["email"] && gamedata["player2"] && gamedata.gameboard[position] === ""){
             if (gamedata["player1"] === user["email"]){
                 gamedata.gameboard[position] = "X"
@@ -84,6 +93,7 @@
                 await setDoc(doc(db, "games", params["id"]), gamedata)
             }
         }
+
     }
 
     const checkEnd = ()=>{
@@ -97,11 +107,11 @@
             ["1", "5", "9"],
             ["7", "5", "3"],
         ];
+
         for (let i = 0; i < solutions.length; i++){
             if (gamedata.gameboard[solutions[i][0]] === gamedata.gameboard[solutions[i][1]] && 
                 gamedata.gameboard[solutions[i][1]] === gamedata.gameboard[solutions[i][2]] &&
-                gamedata.gameboard[solutions[i][1]] !== "")
-                {
+                gamedata.gameboard[solutions[i][1]] !== ""){
                 if(gamedata.gameboard[solutions[i][1]] === "X"){
                     gamedata["winner"] = gamedata["player1"];
                 } else {
